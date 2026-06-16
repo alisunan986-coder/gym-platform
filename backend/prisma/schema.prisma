@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===========================
+// ENUMS
+// ===========================
+
+enum Role {
+  ADMIN
+  TRAINER
+  CLIENT
+}
+
+enum FitnessLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum FitnessGoal {
+  WEIGHT_LOSS
+  MUSCLE_GAIN
+  STRENGTH_BUILDING
+  ENDURANCE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+// ===========================
+// USER MODEL
+// ===========================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password     String
+  firstName    String
+  lastName     String
+  role         Role     @default(CLIENT)
+  isActive     Boolean  @default(true)
+  refreshToken String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  fitnessProfile  FitnessProfile?
+  workoutPlans    WorkoutPlan[]
+  mealPlans       MealPlan[]
+  progressLogs    ProgressLog[]
+  notifications   Notification[]
+
+  // Trainer relations
+  assignedClients TrainerClient[] @relation("TrainerClients")
+  assignedTrainer TrainerClient[] @relation("ClientTrainer")
+
+  @@map("users")
+}
+
+// ===========================
+// FITNESS PROFILE
+// ===========================
+
+model FitnessProfile {
+  id                String       @id @default(uuid())
+  userId            String       @unique
+  age               Int
+  gender            Gender
+  height            Float        // in cm
+  weight            Float        // in kg
+  fitnessLevel      FitnessLevel
+  fitnessGoal       FitnessGoal
+  workoutDaysPerWeek Int
+  availableEquipment String[]
+  dietaryPreferences String[]
+  allergies         String[]
+  medicalConditions String[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("fitness_profiles")
+}
+
+// ===========================
+// TRAINER - CLIENT ASSIGNMENT
+// ===========================
+
+model TrainerClient {
+  id        String   @id @default(uuid())
+  trainerId String
+  clientId  String
+  createdAt DateTime @default(now())
+
+  trainer User @relation("TrainerClients", fields: [trainerId], references: [id])
+  client  User @relation("ClientTrainer", fields: [clientId], references: [id])
+
+  @@unique([trainerId, clientId])
+  @@map("trainer_clients")
+}
+
+// ===========================
+// WORKOUT PLAN
+// ===========================
+
+model WorkoutPlan {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  description String?
+  isAiGenerated Boolean @default(false)
+  weeklySchedule Json  // Stores the full AI generated plan
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("workout_plans")
+}
+
+// ===========================
+// MEAL PLAN
+// ===========================
+
+model MealPlan {
+  id            String   @id @default(uuid())
+  userId        String
+  title         String
+  isAiGenerated Boolean  @default(false)
+  dailyCalories Int
+  proteinGrams  Int
+  meals         Json     // Stores breakfast, lunch, dinner, snacks
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("meal_plans")
+}
+
+// ===========================
+// PROGRESS LOG
+// ===========================
+
+model ProgressLog {
+  id           String   @id @default(uuid())
+  userId       String
+  weight       Float?
+  bodyFat      Float?
+  chest        Float?
+  waist        Float?
+  hips         Float?
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("progress_logs")
+}
+
+// ===========================
+// NOTIFICATIONS
+// ===========================
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
