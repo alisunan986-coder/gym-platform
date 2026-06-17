@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express, { Request, Response, Application } from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/user.routes';
+import fitnessProfileRoutes from './routes/fitnessProfile.routes';
 
 const app: Application = express();
 const port: number = Number(process.env.PORT) || 5000;
@@ -16,6 +18,8 @@ app.use(express.json());
 // ROUTES
 // ==========================================
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/fitness-profile', fitnessProfileRoutes);
 
 // Health check
 app.get('/', (req: Request, res: Response) => {

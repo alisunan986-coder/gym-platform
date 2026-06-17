@@ -1,17 +1,56 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'] || req.headers['Authorization'];
-  const token = typeof authHeader === 'string' && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+// Extend Request to include user info
+export interface AuthRequest extends Request {
+  user?: {
+    userId: string;
+    email: string;
+    role: string;
+  };
+}
 
-  if (!token) return res.status(401).json({ message: 'Access token missing.' });
+// ==========================================
+// 🛡️ VERIFY TOKEN MIDDLEWARE
+// ==========================================
+export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction): any => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: "Access denied. No token provided." });
+  }
+
+  const token = authHeader.split(' ')[1];
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string);
-    (req as any).user = payload;
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as {
+      userId: string;
+      email: string;
+      role: string;
+    };
+
+    req.user = decoded;
     next();
-  } catch (err) {
-    return res.status(403).json({ message: 'Invalid or expired token.' });
+
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid or expired token." });
   }
+};
+
+// ==========================================
+// 🔒 ROLE GUARD MIDDLEWARE
+// ==========================================
+export const requireRole = (...roles: string[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): any => {
+    if (!req.user) {
+return res.status(403).json({ message: `Access denied. Required role: ${roles.join(' or ')}` });    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        message: `Access denied. Required role: ${roles.join(' or ')}` 
+      });
+    }
+
+    next();
+  };
 };
