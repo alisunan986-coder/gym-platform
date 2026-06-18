@@ -7,7 +7,7 @@ import {
   assignClientToTrainer
 } from '../controllers/admin.controller';
 import { verifyToken, requireRole } from '../middleware/auth.middleware';
-
+console.log('✅ admin.routes.ts loaded'); // ADD THIS LINE
 const router = Router();
 
 // All routes here require ADMIN role

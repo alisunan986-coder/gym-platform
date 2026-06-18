@@ -4,6 +4,8 @@ import cors from 'cors';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import fitnessProfileRoutes from './routes/fitnessProfile.routes';
+import adminRoutes from './routes/admin.routes';
+import trainerRoutes from './routes/trainer.routes';
 
 const app: Application = express();
 const port: number = Number(process.env.PORT) || 5000;
@@ -20,6 +22,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/fitness-profile', fitnessProfileRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/trainer', trainerRoutes);
 
 // Health check
 app.get('/', (req: Request, res: Response) => {

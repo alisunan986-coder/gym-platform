@@ -119,7 +119,7 @@ export const getAllClients = async (req: AuthRequest, res: Response): Promise<an
 // ==========================================
 export const updateTrainerStatus = async (req: AuthRequest, res: Response): Promise<any> => {
   try {
-    const { id } = req.params;
+      const id = req.params.id as string;
     const { isActive } = req.body;
 
     if (typeof isActive !== 'boolean') {
