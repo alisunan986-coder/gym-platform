@@ -29,7 +29,7 @@ export const register = async (req: Request, res: Response): Promise<any> => {
     }
 
     // 3. Hash the password
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(10);//salt prevents identical passwordds from having the same hash 
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // 4. Save to database

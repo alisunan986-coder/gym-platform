@@ -18,7 +18,8 @@ export const createFitnessProfile = async (req: AuthRequest, res: Response): Pro
       availableEquipment,
       dietaryPreferences,
       allergies,
-      medicalConditions
+      medicalConditions,
+      cuisinePreference
     } = req.body;
 
     // 1. Validation
@@ -53,7 +54,8 @@ export const createFitnessProfile = async (req: AuthRequest, res: Response): Pro
         availableEquipment: availableEquipment || [],
         dietaryPreferences: dietaryPreferences || [],
         allergies: allergies || [],
-        medicalConditions: medicalConditions || []
+        medicalConditions: medicalConditions || [],
+         cuisinePreference: cuisinePreference || 'Ethiopian'
       }
     });
 
@@ -107,7 +109,8 @@ export const updateFitnessProfile = async (req: AuthRequest, res: Response): Pro
       availableEquipment,
       dietaryPreferences,
       allergies,
-      medicalConditions
+      medicalConditions,
+      cuisinePreference
     } = req.body;
 
     // 1. Check if profile exists
@@ -135,7 +138,8 @@ export const updateFitnessProfile = async (req: AuthRequest, res: Response): Pro
         ...(availableEquipment && { availableEquipment }),
         ...(dietaryPreferences && { dietaryPreferences }),
         ...(allergies && { allergies }),
-        ...(medicalConditions && { medicalConditions })
+        ...(medicalConditions && { medicalConditions }),
+        ...(cuisinePreference && { cuisinePreference })
       }
     });
 

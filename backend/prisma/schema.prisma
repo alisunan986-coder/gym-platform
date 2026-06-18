@@ -82,6 +82,7 @@ model FitnessProfile {
   dietaryPreferences String[]
   allergies         String[]
   medicalConditions String[]
+  cuisinePreference  String?      @default("Ethiopian")
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
