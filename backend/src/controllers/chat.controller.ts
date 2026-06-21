@@ -9,7 +9,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 // ==========================================
 // 🤖 BUILD SYSTEM PROMPT FROM CLIENT PROFILE
 // ==========================================
-const buildSystemPrompt = (profile: any, firstName: string, lastName: string): string => {
+const buildSystemPrompt = (profile: any, firstName: string, lastName: string, language: string): string => {
   return `You are an expert AI fitness coach and nutritionist. You are warm, motivating, and supportive.
 
 Your client's name is ${firstName} ${lastName}. Address them by their first name (${firstName}) naturally in conversation.
@@ -36,8 +36,8 @@ Guidelines:
 - Keep responses concise and practical (2-4 paragraphs max)
 - If asked about medical issues beyond fitness/nutrition, recommend consulting a doctor
 - Always remember their goal is ${profile.fitnessGoal}
-- VERY IMPORTANT: Always detect the language the client writes in and respond in that SAME language. If they write in Amharic (አማርኛ), respond entirely in Amharic. If they write in English, respond in English. Never switch languages unless the client switches first.
-- When responding in Amharic, use simple, clear, everyday Amharic that everyone can understand regardless of education level.`;
+- CRITICAL: You MUST respond ENTIRELY in ${language} language only. Every single word must be in ${language}. Do NOT mix languages under any circumstances.
+ This is non-negotiable.- When responding in Amharic, use simple, clear, everyday Amharic that everyone can understand regardless of education level.`;
 };
 
 // ==========================================
@@ -46,7 +46,8 @@ Guidelines:
 export const sendMessage = async (req: AuthRequest, res: Response): Promise<any> => {
   try {
     const userId = req.user?.userId as string;
-    const { message } = req.body;
+    const { message, language } = req.body;
+    const responseLanguage = language || 'English';
 
     if (!message || message.trim() === '') {
       return res.status(400).json({ message: "Message cannot be empty." });
@@ -60,6 +61,7 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<any>
         select: { firstName: true, lastName: true }
       })
     ]);
+
     if (!profile) {
       return res.status(404).json({
         message: "Please complete your fitness profile first so I can give you personalized advice!"
@@ -87,13 +89,13 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<any>
     // 5. Start Gemini chat session with history + system prompt
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-    systemInstruction: buildSystemPrompt(profile, user?.firstName || '', user?.lastName || '')
+      systemInstruction: buildSystemPrompt(profile, user?.firstName || '', user?.lastName || '', responseLanguage)
     });
 
     const chat = model.startChat({ history });
 
-          // 6. Send the new message to Gemini (with auto retry)
-      const aiResponse = await generateChatResponse(model, chat, message);
+    // 6. Send the new message to Gemini (with auto retry)
+    const aiResponse = await generateChatResponse(model, chat, message);
 
     // 7. Save AI response to DB
     await prisma.chatMessage.create({

@@ -8,6 +8,7 @@ import adminRoutes from './routes/admin.routes';
 import trainerRoutes from './routes/trainer.routes';
 import aiRoutes from './routes/ai.routes';
 import chatRoutes from './routes/chat.routes';
+import progressRoutes from './routes/progress.routes';
 
 const app: Application = express();
 const port: number = Number(process.env.PORT) || 5000;
@@ -28,6 +29,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/trainer', trainerRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/progress', progressRoutes);
 // Health check
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({
