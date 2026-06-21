@@ -3,31 +3,64 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 
 // ==========================================
-// 🧠 CORE FUNCTION — Ask Gemini, get clean JSON back
+// 🔄 RETRY HELPER — retries on 503 errors
 // ==========================================
-export const generateJSON = async (prompt: string): Promise<any> => {
-  try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+const retryWithBackoff = async (
+  fn: () => Promise<any>,
+  retries: number = 3,
+  delayMs: number = 2000
+): Promise<any> => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      const is503 = error?.status === 503 || error?.message?.includes('503');
+      const isLastAttempt = attempt === retries;
 
-    const result = await model.generateContent(prompt);
-    let text = result.response.text();
-    //console.log('🔍 RAW GEMINI RESPONSE:', text);
-
-    // Gemini sometimes wraps JSON in markdown code blocks like ```json ... ```
-    // We strip that out before parsing
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
-    return JSON.parse(text);
-
-  } catch (error) {
-    console.error('Gemini Service Error:', error);
-    throw new Error('Failed to generate AI response. Please try again.');
+      if (is503 && !isLastAttempt) {
+        console.log(`⚠️ Gemini 503 error - retrying in ${delayMs}ms (attempt ${attempt}/${retries})...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        delayMs *= 2; // exponential backoff: 2s → 4s → 8s
+      } else {
+        throw error; // not a 503, or out of retries
+      }
+    }
   }
 };
 
 // ==========================================
-// 💪 WORKOUT PLAN PROMPT BUILDER
+// 🧠 CORE FUNCTION — Ask Gemini, get clean JSON back
 // ==========================================
+export const generateJSON = async (prompt: string): Promise<any> => {
+  return retryWithBackoff(async () => {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const result = await model.generateContent(prompt);
+    let text = result.response.text();
+
+    // console.log('🔍 RAW GEMINI RESPONSE:', text);
+
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    return JSON.parse(text);
+  });
+};
+
+// ==========================================
+// 💬 CHAT FUNCTION — used by chatbot
+// ==========================================
+export const generateChatResponse = async (
+  model: any,
+  chat: any,
+  message: string
+): Promise<string> => {
+  return retryWithBackoff(async () => {
+    const result = await chat.sendMessage(message);
+    return result.response.text();
+  });
+};
+
+// rest of your existing prompt builders stay the same...
 export const buildWorkoutPrompt = (profile: any): string => {
   return `
 You are a certified personal trainer. Generate a personalized weekly workout plan based on this client profile:
@@ -66,9 +99,6 @@ Generate exactly ${profile.workoutDaysPerWeek} workout days, spread evenly acros
 `;
 };
 
-// ==========================================
-// 🥗 MEAL PLAN PROMPT BUILDER
-// ==========================================
 export const buildMealPlanPrompt = (profile: any): string => {
   return `
 You are a certified nutritionist specializing in ${profile.cuisinePreference || 'Ethiopian'} cuisine. Generate a personalized daily meal plan based on this client profile:
@@ -80,7 +110,7 @@ You are a certified nutritionist specializing in ${profile.cuisinePreference || 
 - Allergies: ${profile.allergies.join(', ') || 'none'}
 - Cuisine Preference: ${profile.cuisinePreference || 'Ethiopian'}
 
-IMPORTANT: All meals MUST be authentic ${profile.cuisinePreference || 'Ethiopian'} dishes (e.g. injera, shiro, doro wat, tibs, kinche, fir-fir, atkilt, misir wat, etc. if Ethiopian). Use real dish names familiar to people from that culture, not generic Western food.
+IMPORTANT: All meals MUST be authentic ${profile.cuisinePreference || 'Ethiopian'} dishes. Use real dish names familiar to people from that culture.
 
 Respond with ONLY valid JSON, no markdown, no explanations, no extra text. Use exactly this structure:
 
@@ -98,6 +128,6 @@ Respond with ONLY valid JSON, no markdown, no explanations, no extra text. Use e
   }
 }
 
-Make sure the meal plan respects all dietary preferences and avoids all listed allergies completely, while staying authentic to ${profile.cuisinePreference || 'Ethiopian'} cuisine.
+Make sure the meal plan respects all dietary preferences and avoids all listed allergies completely.
 `;
 };

@@ -56,7 +56,7 @@ model User {
   mealPlans       MealPlan[]
   progressLogs    ProgressLog[]
   notifications   Notification[]
-
+   chatMessages  ChatMessage[]
   // Trainer relations
   assignedClients TrainerClient[] @relation("TrainerClients")
   assignedTrainer TrainerClient[] @relation("ClientTrainer")
@@ -183,4 +183,18 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+// ===========================
+// CHAT MESSAGES
+// ===========================
+model ChatMessage {
+  id        String   @id @default(uuid())
+  userId    String
+  role      String   // "user" or "model"
+  content   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
 }
