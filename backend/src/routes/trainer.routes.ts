@@ -4,7 +4,7 @@ import { verifyToken, requireRole } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.get('/my-clients', verifyToken, requireRole('TRAINER'), getMyClients);
+router.get('/my-clients', verifyToken, requireRole('TRAINER'), getMyClients);//end points
 router.get('/clients/:clientId/profile', verifyToken, requireRole('TRAINER'), getClientProfile);
 
 export default router;

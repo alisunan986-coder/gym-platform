@@ -2,7 +2,8 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import prisma from '../config/prisma';
 import bcrypt from 'bcryptjs';
-
+import { io } from '../index';
+import { sendNotificationToUser } from '../socket/socket';
 // ==========================================
 // 👔 CREATE TRAINER ACCOUNT
 // ==========================================
@@ -187,8 +188,30 @@ export const assignClientToTrainer = async (req: AuthRequest, res: Response): Pr
       return res.status(400).json({ message: "This client is already assigned to this trainer." });
     }
 
-    const assignment = await prisma.trainerClient.create({
-      data: { trainerId, clientId }
+    // ✅ This is the updated version:
+const assignment = await prisma.trainerClient.create({
+  data: { trainerId, clientId }
+});
+
+// Get trainer name for notification
+const trainerInfo = await prisma.user.findUnique({
+  where: { id: trainerId },
+  select: { firstName: true, lastName: true }
+});
+
+// Save notification to DB
+await prisma.notification.create({
+  data: {
+    userId: clientId,
+    title: "Trainer Assigned! 🎉",
+    message: `You have been assigned to trainer ${trainerInfo?.firstName} ${trainerInfo?.lastName}. They will help guide your fitness journey!`
+  }
+});
+
+    // Send real-time notification
+    sendNotificationToUser(io, clientId, {
+      title: "Trainer Assigned! 🎉",
+      message: `You have been assigned to trainer ${trainerInfo?.firstName} ${trainerInfo?.lastName}!`
     });
 
     return res.status(201).json({
