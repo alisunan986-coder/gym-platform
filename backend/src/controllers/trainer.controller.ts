@@ -25,7 +25,7 @@ export const getMyClients = async (req: AuthRequest, res: Response): Promise<any
       }
     });
 
-    const clients = assignments.map(a => a.client);
+    const clients = assignments.map((a: any) => a.client);
 
     return res.status(200).json({ clients });
 

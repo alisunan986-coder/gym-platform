@@ -12,6 +12,8 @@ import aiRoutes from './routes/ai.routes';
 import chatRoutes from './routes/chat.routes';
 import progressRoutes from './routes/progress.routes';
 import notificationRoutes from './routes/notification.routes';
+import subscriptionRoutes from './routes/subscription.routes';
+
 
 const app: Application = express();
 const port: number = Number(process.env.PORT) || 5000;
@@ -20,6 +22,8 @@ const port: number = Number(process.env.PORT) || 5000;
 // MIDDLEWARE
 // ==========================================
 app.use(cors());
+app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }));
+
 app.use(express.json());
 
 // ==========================================
@@ -34,7 +38,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/notifications', notificationRoutes);
-
+app.use('/api/subscriptions', subscriptionRoutes);
 // Health check
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({

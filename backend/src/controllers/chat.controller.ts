@@ -81,7 +81,7 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<any>
     });
 
     // 4. Build conversation history in Gemini format
-    const history = previousMessages.map(msg => ({
+    const history = previousMessages.map((msg: any) => ({
       role: msg.role as 'user' | 'model',
       parts: [{ text: msg.content }]
     }));

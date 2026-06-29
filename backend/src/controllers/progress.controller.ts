@@ -119,7 +119,7 @@ export const getProgressInsights = async (req: AuthRequest, res: Response): Prom
     }
 
     // 2. Build progress data string for Gemini
-    const progressData = logs.map((log, index) => {
+      const progressData = logs.map((log: any, index: number) => {
       const date = new Date(log.createdAt).toLocaleDateString();
       return `Entry ${index + 1} (${date}): Weight: ${log.weight}kg${log.bodyFat ? `, Body Fat: ${log.bodyFat}%` : ''}${log.waist ? `, Waist: ${log.waist}cm` : ''}${log.chest ? `, Chest: ${log.chest}cm` : ''}${log.hips ? `, Hips: ${log.hips}cm` : ''}${log.notes ? `, Notes: "${log.notes}"` : ''}`;
     }).join('\n');
